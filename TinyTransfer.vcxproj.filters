@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;moc;h;def;odl;idl;res;</Extensions>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;moc;h;def;odl;idl;res;</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Thread">
+      <UniqueIdentifier>{1cf03430-f11b-4849-865c-1088e805ee68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dll">
+      <UniqueIdentifier>{39920cb6-07cd-4387-87f3-9194aaf925f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NetData">
+      <UniqueIdentifier>{c969f526-4596-4e7d-9602-acf8e060c524}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SerialPort">
+      <UniqueIdentifier>{8d342588-8554-430b-a1d7-3cf147aa9be6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Config">
+      <UniqueIdentifier>{66e9cf59-f755-429b-8489-39daa8580aaa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dllImport.cpp">
+      <Filter>Dll</Filter>
+    </ClCompile>
+    <ClCompile Include="DataThread.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
+    <ClCompile Include="M_UdpSocket.cpp">
+      <Filter>NetData</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialPort\qextserialbase.cpp">
+      <Filter>SerialPort</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialPort\qextserialenumerator.cpp">
+      <Filter>SerialPort</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialPort\qextserialport.cpp">
+      <Filter>SerialPort</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialPort\win_qextserialport.cpp">
+      <Filter>SerialPort</Filter>
+    </ClCompile>
+    <ClCompile Include="TinyConfig.cpp">
+      <Filter>Config</Filter>
+    </ClCompile>
+    <ClCompile Include="FFT_PACK.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FFT_PACK.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TinyInstance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TinySerialPort.cpp">
+      <Filter>SerialPort</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dllImport.h">
+      <Filter>Dll</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadSafeQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct_Data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct_NetData.h">
+      <Filter>NetData</Filter>
+    </ClInclude>
+    <ClInclude Include="SerialPort\qextserialenumerator.h">
+      <Filter>SerialPort</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct_Order.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct_Datas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TinySerialPort.h">
+      <Filter>SerialPort</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="debug\moc_predefs.h.cbt">
+      <Filter>Generated Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="release\moc_predefs.h.cbt">
+      <Filter>Generated Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="DataThread.h">
+      <Filter>Thread</Filter>
+    </QtMoc>
+    <QtMoc Include="M_UdpSocket.h">
+      <Filter>NetData</Filter>
+    </QtMoc>
+    <QtMoc Include="SerialPort\win_qextserialport.h">
+      <Filter>SerialPort</Filter>
+    </QtMoc>
+    <QtMoc Include="SerialPort\qextserialbase.h">
+      <Filter>SerialPort</Filter>
+    </QtMoc>
+    <QtMoc Include="SerialPort\qextserialport.h">
+      <Filter>SerialPort</Filter>
+    </QtMoc>
+    <QtMoc Include="TinyInstance.h">
+      <Filter>Source Files</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TinyConfig.h">
+      <Filter>Config</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct_NetCommon.h">
+      <Filter>NetData</Filter>
+    </ClInclude>
+    <ClInclude Include="FFT_PACK_DATA.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
