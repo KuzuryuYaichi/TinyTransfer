@@ -30,8 +30,9 @@ enum SERIAL_ORDER_TYPE
 	CW_VALUE,//19.	CW拍频值下发
 	FFT_WINDOW,//20.	FFT运算窗类型下发
 	NB_RECV_MODE,//21.	窄带接收模式下发
-	NB_AGC_SWITCH//22.	窄带AGC模式控制
-	//23.	上位机与单板机之间的指令（不需要透传给V7），待用户给出协议
+	NB_AGC_SWITCH,//22.	窄带AGC模式控制
+	SMOOTH_TIMES//23.	平滑次数控制
+	//24.	上位机与单板机之间的指令（不需要透传给V7），待用户给出协议
 };
 
 struct NB_Params
@@ -189,7 +190,8 @@ enum NET_CONTROL_ORDER
 	NET_CW_BFO = 0x10000303,//CW_VALUE
 	NET_DIGITAL_24dB_GAIN = 0x10000ccc,//24dB固定数字增益
 	NET_RF_STATUS = 0x10000eee,//RF_STATUS
-	NET_GAIN_MODE = 0x10000fff //RF_GAIN_MODE
+	NET_GAIN_MODE = 0x10000fff, //RF_GAIN_MODE
+	NET_SMOOTH_TIMES = 0x10000ddd
 };
 
 extern struct NB_Params nb_params[64];
@@ -309,6 +311,11 @@ struct Struct_Order
 		{
 			break;
 		}
+		case NET_SMOOTH_TIMES:
+		{
+			order[1] = *(int*)params;
+			break;
+		}
 		}
 	}
 };
@@ -417,6 +424,12 @@ struct Struct_Orders
 		{
 			p = new Struct_Order * [1];
 			push(RF_GAIN_MODE);
+			break;
+		}
+		case NET_SMOOTH_TIMES:
+		{
+			p = new Struct_Order * [1];
+			push(SMOOTH_TIMES);
 			break;
 		}
 		}

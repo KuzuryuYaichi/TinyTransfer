@@ -63,7 +63,7 @@ void DataWBNB(void* pBuffer, int PACK_LEN, int PACK_NUM)
 	tsqueueNBs.push(pBuf_NB);
 }
 
-const unsigned int PACK_LEN_PER_PACK[] = { 400 * 4 + 10 * 8, 800 * 4 + 10 * 8, 1600 * 4 + 10 * 8, 3200 * 4 + 10 * 8 };
+const unsigned int PACK_LEN_PER_PACK[] = { 400 * 2 + 10 * 8, 800 * 2 + 10 * 8, 1600 * 2 + 10 * 8, 3200 * 2 + 10 * 8, 200 * 2 + 10 * 8 };
 
 void DataFFT(void* pBuffer, int PACK_LEN, int PACK_NUM)
 {
@@ -79,8 +79,8 @@ void DataFFT(void* pBuffer, int PACK_LEN, int PACK_NUM)
 	std::shared_ptr<struct Struct_Datas<struct Struct_FFT>> pBuf_FFT(new struct Struct_Datas<struct Struct_FFT>(PACK_NUM));
 	for (int i = 0; i < PACK_NUM; ++i)
 	{
-		int fft_num = ptr[77];
-		if (fft_num >= 0 && fft_num < 4)
+		int fft_num = ptr[20];
+		if (fft_num >= 0 && fft_num < 5)
 		{
 			if (PACK_LEN_PER_PACK[fft_num] == PACK_LEN)
 			{

@@ -64,11 +64,11 @@ struct Struct_WB
 	}
 };
 
-static const int FFT_NUM_MAP[4] = { 400, 800, 1600, 3200 };
+static const int FFT_NUM_MAP[] = { 400, 800, 1600, 3200, 200 };
 
 struct Struct_FFT
 {
-	static const int PACK_LEN = 3340;
+	static const int PACK_LEN = (200 * 2 + 10 * 8) * 16;
 	short Order;
 	short identify;
 	char time1[4];
@@ -77,15 +77,15 @@ struct Struct_FFT
 	char gain;
 	short GPS_BD1;
 	int BD_GPS2;
-	char DigitalGain[57];
 	char pointNum;
 	char bandNum;
+	char DigitalGain[57];
 	char remark;
-	int Data[PACK_LEN];
+	short Data[PACK_LEN];
 
 	Struct_FFT(unsigned char* buffer)
 	{
-		memcpy(this, buffer, 80 + 4 * FFT_NUM_MAP[buffer[77]]);
+		memcpy(this, buffer, 80 + 2 * FFT_NUM_MAP[buffer[20]]);
 	}
 };
 

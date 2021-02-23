@@ -8,6 +8,7 @@
 #include "dllexport.h"
 #include "FFT_PACK.h"
 #include <math.h>
+#include "SerialPort/qextserialenumerator.h"
 
 extern threadsafe_queue<std::shared_ptr<struct Struct_NB>> tsqueueNB;
 extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_NB>>> tsqueueNBs;
@@ -251,11 +252,6 @@ void DataThreadFFT::MakeProtocol(int type, struct Struct_FFT* ptr)
 	int fft_point_num = FFT_NUM_MAP[ptr->pointNum];
 	if (fft_point_num <= ptr->PACK_LEN)
 	{
-		//FFT_DATA fft_data(ptr);
-		//int len = fft_data.MakeNetProtocol(ptr);
-		//if (udpSocket != nullptr)
-		//	udpSocket->udpDataSend((char*)&fft_data, len);
-
 		auto fft_pack = FFT_PACK::DataProcessFFT(ptr);
 		if (fft_pack != nullptr)
 		{

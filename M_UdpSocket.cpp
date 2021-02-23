@@ -79,7 +79,13 @@ void M_UdpSocket::udpDataSend(const char* data, int len)
     while (total > 0)
     {
         ret = writeDatagram(data, len, remoteAddr, remotePort);
-        total -= ret;
+        if (ret > 0)
+            total -= ret;
+        //else if (ret < 0)
+        //{
+        //    qDebug() << "MySocket Error:" << error();
+        //    break;
+        //}
     }
 }
 
@@ -90,6 +96,7 @@ void M_UdpSocket::udpDataSend(const char* data, int len, QHostAddress& remoteAdd
     while (total > 0)
     {
         ret = writeDatagram(data, len, remoteAddr, remotePort);
-        total -= ret;
+        if (ret > 0)
+            total -= ret;
     }
 }

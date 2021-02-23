@@ -158,10 +158,14 @@ struct paramStruct
     }
 };
 
-unsigned int pack_resolution = 3; //0:512 1:1024 2:2048 3:4096
-const unsigned int PACK_LEN_PER_PACK[] = { 400 * 4 + 10 * 8, 800 * 4 + 10 * 8, 1600 * 4 + 10 * 8, 3200 * 4 + 10 * 8 };
-const unsigned int PACK_NUM_PER_PACK[] = { 8, 4, 2, 1 };
-const unsigned int BLOCK_LEN_PER_PACK[] = { (400 * 4 + 10 * 8) * 8, (800 * 4 + 10 * 8) * 4, (1600 * 4 + 10 * 8) * 2, (3200 * 4 + 10 * 8) * 1 };
+unsigned int pack_resolution = 3; // 0:512 1:1024 2:2048 3:4096 4:256
+const unsigned int PACK_LEN_PER_PACK[] = { 400 * 2 + 10 * 8, 800 * 2 + 10 * 8, 1600 * 2 + 10 * 8, 3200 * 2 + 10 * 8, 200 * 2 + 10 * 8 };
+const unsigned int PACK_NUM_PER_PACK[] = { 8, 4, 2, 1, 16 };
+const unsigned int BLOCK_LEN_PER_PACK[] = { PACK_LEN_PER_PACK[0] * PACK_NUM_PER_PACK[0],
+                                            PACK_LEN_PER_PACK[1] * PACK_NUM_PER_PACK[1],
+                                            PACK_LEN_PER_PACK[2] * PACK_NUM_PER_PACK[2],
+                                            PACK_LEN_PER_PACK[3] * PACK_NUM_PER_PACK[3],
+                                            PACK_LEN_PER_PACK[4] * PACK_NUM_PER_PACK[4] };
 
 void SetPackLenFFT(int resolution)
 {
@@ -191,12 +195,6 @@ void read_FFT(struct paramStruct* param)
                 bytes_remaining -= read_len;
                 TransferByte += read_len;
             }
-
-            //static unsigned int last = 0, now = 0;
-            //now = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
-            //if (now != last + 8)
-            //    std::cout << "FFT Error Order Now: " << now << " Last: " << last << std::endl;
-            //last = now;
 
             if (CallBack != nullptr)
                 CallBack(buffer, PACK_LEN_PER_PACK[pack_resolution_t], PACK_NUM_PER_PACK[pack_resolution_t] * PACK_NUM);
@@ -264,12 +262,12 @@ size_t TransferByte_WbNb, TransferByte_FFT;
 
 void ReadThread(xdma_device& dev, PDATA_CALLBACK& CallBackWBNB, PDATA_CALLBACK& CallBackFFT)
 {
-    const size_t PACK_LEN_WBNB = 39 * 8 * 32, PACK_LEN_FFT = 1680 * 8; //1610 * 8;
+    const size_t PACK_LEN_WBNB = 39 * 8 * 32, PACK_LEN_FFT = 1680 * 8; //1680 * 8;
     Info[0] = paramStruct(dev, CallBackWBNB, TransferByte_WbNb, 0, PACK_LEN_WBNB,  80);
     Info[1] = paramStruct(dev, CallBackFFT, TransferByte_FFT, 1, PACK_LEN_FFT, 80);
     try {
 		DWORD dwThreadID;
-		CreateThread(NULL, 0, ThreadProc_WBNB, &Info[0], 0, &dwThreadID);
+		//CreateThread(NULL, 0, ThreadProc_WBNB, &Info[0], 0, &dwThreadID);
         CreateThread(NULL, 0, ThreadProc_FFT, &Info[1], 0, &dwThreadID);
     }
     catch (const std::exception& e) {

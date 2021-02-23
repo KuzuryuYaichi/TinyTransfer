@@ -221,7 +221,7 @@ struct FFT_PARAM
 
 struct FFT_DATA
 {
-	static const int PACK_LEN = 3340;
+	static const int PACK_LEN = (200 * 2 + 10 * 8) * 16;
 	PACK_HEAD packHead;
 	qint32 iDDCChan;
 	SAMPLE_TIME iSampleTime;
