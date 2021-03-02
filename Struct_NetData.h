@@ -4,6 +4,9 @@
 #include "Struct_Data.h"
 #include "Struct_Order.h"
 #include "Struct_NetCommon.h"
+#include <QFile>
+#include <QDir>
+#include <QCoreApplication>
 
 extern struct NB_Params nb_params[64];
 
@@ -78,7 +81,7 @@ struct NB_DDC_DATA
 
 	NB_DDC_DATA() {}
 
-	bool add(struct Struct_NB* ptr, int NB_Pos[])//返回是否攒够了足够长度的发送数据
+	bool add(struct Struct_NB* ptr, int pos[])//返回是否攒够了足够长度的发送数据
 	{
 		__int64 DataValid =
 			((ptr->DataValid & 0xFF00000000000000) >> 56) |
@@ -92,10 +95,10 @@ struct NB_DDC_DATA
 
 		if (iDDCChan < 0 || iDDCChan > 63 || !(DataValid & (((__int64)1) << iDDCChan)))
 			return false;
-		memcpy(Data[NB_Pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
-		if (++NB_Pos[iDDCChan] == PACK_LEN)
+		memcpy(Data[pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
+		if (++pos[iDDCChan] == PACK_LEN)
 		{
-			NB_Pos[iDDCChan] = 0;
+			pos[iDDCChan] = 0;
 			iSampleTime.sysTime.calc();
 			iSampleTime.dwMicroSecond = ptr->time2;
 			struPara.make(ptr, iDDCChan);
@@ -117,7 +120,7 @@ struct NB_DDC_DATA
 		return 20 + pack_len;
 	}
 	
-	bool add(std::shared_ptr<struct Struct_NB>& ptr, int NB_Pos[])//返回是否攒够了足够长度的发送数据
+	bool add(std::shared_ptr<struct Struct_NB>& ptr, int pos[])//返回是否攒够了足够长度的发送数据
 	{
 		__int64 DataValid =
 			((ptr->DataValid & 0xFF00000000000000) >> 56) |
@@ -131,10 +134,10 @@ struct NB_DDC_DATA
 
 		if (iDDCChan < 0 || iDDCChan > 63 || !(DataValid & (((__int64)1) << iDDCChan)))
 			return false;
-		memcpy(Data[NB_Pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
-		if (++NB_Pos[iDDCChan] == PACK_LEN)
+		memcpy(Data[pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
+		if (++pos[iDDCChan] == PACK_LEN)
 		{
-			NB_Pos[iDDCChan] = 0;
+			pos[iDDCChan] = 0;
 			iSampleTime.sysTime.calc();
 			iSampleTime.dwMicroSecond = ptr->time2;
 			struPara.make(ptr, iDDCChan);
@@ -154,6 +157,131 @@ struct NB_DDC_DATA
 		packHead.iDataLength = pack_len;
 		*(int*)(buf + 16 + pack_len) = 0x77777777;
 		return 20 + pack_len;
+	}
+};
+
+//g)	WBZC_DDC_DATA - 宽带ZC数据结构体
+//修饰符号	字段名称	表示内容	标准字节数
+//Int32	iDDCChan	通道号	4
+//Int32	iFs	采样速率	4
+//Int32	iResolution	频率分辨率	4
+//Int32	iScanFreqNum	接收机扫描频率数，
+//1 - 定频； > 1扫频	4
+//Int32	iScanningFlag	状态标记0未扫描1扫描	4
+//Int32	iCenterFreq	宽带中心频率	4
+//Int32	iBandWidth	数据带宽	4
+//Int32	iGain	增益值，这里填写实际增益值。增益模式将在指令中体现。	4
+//SAMPLETIME
+//iSampleTime	采样时间(微妙)	20
+//Int32	iSampleDataLen	IQ数据长度，并非字节数	4
+//Int32[]	iIQData[8192]	IQ数据，高16位为Q，低16位为I，最大8K	32768
+
+struct WB_DDC_DATA
+{
+	static const int PACK_LEN = 512;
+	PACK_HEAD packHead;
+	qint32 iDDCChan = 0;
+	SAMPLE_TIME iSampleTime;
+	//WB_DDC_PARAM struPara;
+	qint32 iSignalLevel = 0;
+	qint32 DataLen = 0;
+	IQ_Data Data[PACK_LEN];
+	qint32 packTail;
+
+	WB_DDC_DATA() {}
+
+	bool add(struct Struct_WB* ptr, int pos[])//返回是否攒够了足够长度的发送数据
+	{
+		if (iDDCChan < 0 || iDDCChan > 59)
+			return false;
+		memcpy(Data[pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
+		if (++pos[iDDCChan] == PACK_LEN)
+		{
+			pos[iDDCChan] = 0;
+			iSampleTime.sysTime.calc();
+			iSampleTime.dwMicroSecond = ptr->time2;
+			//struPara.make(ptr, iDDCChan);
+			return true;
+		}
+		return false;
+	}
+
+	int MakeNetProtocol(struct Struct_WB* ptr)
+	{
+		char* buf = (char*)this;
+		int pack_len = sizeof(*this) - sizeof(int) - sizeof(PACK_HEAD);
+		packHead.iPackType = DT_WB_DDC;
+		packHead.iPackSerial = 0;
+		packHead.iPackTotal = 0;
+		packHead.iPackSubNum = 0;
+		packHead.iDataLength = pack_len;
+		*(int*)(buf + 16 + pack_len) = 0x77777777;
+		return 20 + pack_len;
+	}
+
+	bool add(std::shared_ptr<struct Struct_WB>& ptr, int pos[])//返回是否攒够了足够长度的发送数据
+	{
+		if (iDDCChan < 0 || iDDCChan > 59)
+			return false;
+		memcpy(Data[pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
+		if (++pos[iDDCChan] == PACK_LEN)
+		{
+			pos[iDDCChan] = 0;
+			iSampleTime.sysTime.calc();
+			iSampleTime.dwMicroSecond = ptr->time2;
+			//struPara.make(ptr, iDDCChan);
+			return true;
+		}
+		return false;
+	}
+
+	int MakeNetProtocol(std::shared_ptr<Struct_WB>& ptr)
+	{
+		char* buf = (char*)this;
+		int pack_len = sizeof(*this);
+		packHead.iPackType = DT_NB_DDC;
+		packHead.iPackSerial = 0;
+		packHead.iPackTotal = 0;
+		packHead.iPackSubNum = 0;
+		packHead.iDataLength = pack_len;
+		*(int*)(buf + 16 + pack_len) = 0x77777777;
+		return 20 + pack_len;
+	}
+};
+
+extern bool isRecord;
+
+struct WB_DDC_Record
+{
+	qint32 iDDCChan;
+	QFile file;
+	QString strDir;
+	bool isRecord_dly = false;
+	void WriteFile(const char* Data)
+	{
+		if (isRecord_dly != isRecord)
+		{
+			isRecord_dly = isRecord;
+			if (isRecord_dly)
+			{
+				strDir = QCoreApplication::applicationDirPath() + "/" + QDateTime::currentDateTime().toString("yyyy_MM_dd");
+				QDir dir;
+				if (!dir.exists(strDir))
+				{
+					dir.mkdir(strDir);
+				}
+				file.setFileName(strDir + "/Channel_" + QString::number(iDDCChan + 1) + QDateTime::currentDateTime().toString("_hh_mm_ss") + ".dat");
+				file.open(QIODevice::WriteOnly | QIODevice::Append);
+			}
+			else
+			{
+				file.close();
+			}
+		}
+		if (isRecord)
+		{
+			file.write(Data, WB_DDC_DATA::PACK_LEN * sizeof(IQ_Data));
+		}
 	}
 };
 

@@ -47,8 +47,8 @@ public:
 	uint32_t read_user_register(long addr);
 private:
     device_file control;
-    device_file h2c[2];
-    device_file c2h[2];
+    device_file h2c[3];
+    device_file c2h[3];
     device_file user;
     uint32_t read_control_register(long addr);
 	std::string device_path;
@@ -70,9 +70,11 @@ xdma_device::xdma_device()
 xdma_device::xdma_device(const std::string& device_path) :
     control(device_path + "\\control", GENERIC_READ | GENERIC_WRITE),
     //user(device_path + "\\user", GENERIC_READ | GENERIC_WRITE),
-    h2c{ device_file(), device_file() },
-    c2h{ device_file(device_path + "\\c2h_0", GENERIC_READ), device_file(device_path + "\\c2h_1", GENERIC_READ) },
-	device_path(device_path){
+    h2c{ device_file(), device_file(), device_file() },
+    c2h{ device_file(device_path + "\\c2h_0", GENERIC_READ),
+        device_file(device_path + "\\c2h_1", GENERIC_READ),
+        device_file(device_path + "\\c2h_2", GENERIC_READ) },
+	    device_path(device_path){
 
     if (!is_bit_set(read_control_register(0x0), 15) || !is_bit_set(read_control_register(0x1000), 15)) {
         throw std::runtime_error("XDMA engines h2c_0 and/or c2h_0 are not streaming engines!");
@@ -206,7 +208,7 @@ void read_FFT(struct paramStruct* param)
     delete[] buffer;
 }
 
-void read_WBNB(struct paramStruct* param)
+void read_NB(struct paramStruct* param)
 {
     xdma_device& dev = *param->pDev;
     PDATA_CALLBACK& CallBack = *param->CallBack;
@@ -244,10 +246,54 @@ void read_WBNB(struct paramStruct* param)
     delete[] buffer;
 }
 
-DWORD WINAPI ThreadProc_WBNB(LPVOID lpParam)
+void read_WB(struct paramStruct* param)
 {
-	read_WBNB((struct paramStruct*)lpParam);
+    xdma_device& dev = *param->pDev;
+    PDATA_CALLBACK& CallBack = *param->CallBack;
+    int channel = param->channel;
+    size_t& TransferByte = *param->TransferByte;
+    const int PACK_NUM = param->PACK_NUM;
+    const int PACK_LEN = param->PACK_LEN;
+    const size_t BLOCK_LEN = (10 * 8 + PACK_LEN) * PACK_NUM;
+
+    char* buffer = new char[BLOCK_LEN];
+    while (isRunning)
+    {
+        size_t bytes_remaining = BLOCK_LEN;
+        try {
+            while (bytes_remaining > 0) {
+                size_t offset = BLOCK_LEN - bytes_remaining;
+                int read_len = dev.read_from_engine((char*)buffer + offset, bytes_remaining, channel);
+                bytes_remaining -= read_len;
+                TransferByte += read_len;
+            }
+
+            //static unsigned int last = 0, now = 0;
+            //now = *(unsigned int*)buffer;
+            //if (now != last + 64)
+            //    std::cout << "WBNB Error Order Now: " << now << " Last: " << last << std::endl;
+            //last = now;
+
+            if (CallBack != nullptr)
+                CallBack(buffer, PACK_LEN, PACK_NUM);
+        }
+        catch (const std::exception& e) {
+            std::cout << e.what() << std::endl;
+        }
+    }
+    delete[] buffer;
+}
+
+DWORD WINAPI ThreadProc_NB(LPVOID lpParam)
+{
+	read_NB((struct paramStruct*)lpParam);
 	return 0;
+}
+
+DWORD WINAPI ThreadProc_WB(LPVOID lpParam)
+{
+    read_WB((struct paramStruct*)lpParam);
+    return 0;
 }
 
 DWORD WINAPI ThreadProc_FFT(LPVOID lpParam)
@@ -256,19 +302,21 @@ DWORD WINAPI ThreadProc_FFT(LPVOID lpParam)
     return 0;
 }
 
-struct paramStruct Info[2];
+struct paramStruct Info[3];
 
-size_t TransferByte_WbNb, TransferByte_FFT;
+size_t TransferByte_Nb, TransferByte_Wb, TransferByte_FFT;
 
-void ReadThread(xdma_device& dev, PDATA_CALLBACK& CallBackWBNB, PDATA_CALLBACK& CallBackFFT)
+void ReadThread(xdma_device& dev, PDATA_CALLBACK& CallBackNB, PDATA_CALLBACK& CallBackWB, PDATA_CALLBACK& CallBackFFT)
 {
-    const size_t PACK_LEN_WBNB = 39 * 8 * 32, PACK_LEN_FFT = 1680 * 8; //1680 * 8;
-    Info[0] = paramStruct(dev, CallBackWBNB, TransferByte_WbNb, 0, PACK_LEN_WBNB,  80);
+    const size_t PACK_LEN_NB = 39 * 8 * 32, PACK_LEN_WB = 5 * 8 * 64, PACK_LEN_FFT = 1680 * 8; //1680 * 8;
+    Info[0] = paramStruct(dev, CallBackNB, TransferByte_Nb, 0, PACK_LEN_NB, 80);
     Info[1] = paramStruct(dev, CallBackFFT, TransferByte_FFT, 1, PACK_LEN_FFT, 80);
+    Info[2] = paramStruct(dev, CallBackWB, TransferByte_Wb, 2, PACK_LEN_WB, 80);
     try {
 		DWORD dwThreadID;
-		//CreateThread(NULL, 0, ThreadProc_WBNB, &Info[0], 0, &dwThreadID);
+		CreateThread(NULL, 0, ThreadProc_NB, &Info[0], 0, &dwThreadID);
         CreateThread(NULL, 0, ThreadProc_FFT, &Info[1], 0, &dwThreadID);
+        //CreateThread(NULL, 0, ThreadProc_WB, &Info[2], 0, &dwThreadID);
     }
     catch (const std::exception& e) {
 

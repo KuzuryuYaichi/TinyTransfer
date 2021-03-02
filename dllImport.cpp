@@ -6,10 +6,11 @@
 threadsafe_queue<std::shared_ptr<struct Struct_NB>> tsqueueNB;
 threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_NB>>> tsqueueNBs;
 threadsafe_queue<std::shared_ptr<struct Struct_WB>> tsqueueWB;
+threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_WB>>> tsqueueWBs;
 threadsafe_queue<std::shared_ptr<struct Struct_FFT>> tsqueueFFT;
 threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_FFT>>> tsqueueFFTs;
 
-void DataWBNB(void* pBuffer, int PACK_LEN, int PACK_NUM)
+void DataNB(void* pBuffer, int PACK_LEN, int PACK_NUM)
 {
 	unsigned char* ptr = (unsigned char*)pBuffer;
 
@@ -27,7 +28,7 @@ void DataWBNB(void* pBuffer, int PACK_LEN, int PACK_NUM)
 	//	}
 	//	ptr += PACK_LEN;
 	//}
-
+	int pack_len = PACK_LEN / 32;
 	std::shared_ptr<struct Struct_Datas<struct Struct_NB>> pBuf_NB(new struct Struct_Datas<struct Struct_NB>(PACK_NUM * 32));
 	for (int i = 0; i < PACK_NUM; ++i)
 	{
@@ -45,18 +46,11 @@ void DataWBNB(void* pBuffer, int PACK_LEN, int PACK_NUM)
 		//}
 		//last = now;
 
-		if (ptr[12] == 1)
+		unsigned char* pp = ptr;
+		for (int i = 0; i < 32; ++i)
 		{
-			unsigned char* pp = ptr;
-			for (int i = 0; i < 32; ++i)
-			{
-				pBuf_NB->push(pp);
-				pp += 39 * 8;
-			}	
-		}
-		else if (ptr[12] == 2)
-		{
-
+			pBuf_NB->push(pp);
+			pp += pack_len;
 		}
 		ptr += PACK_LEN;
 	}
@@ -97,4 +91,22 @@ void DataFFT(void* pBuffer, int PACK_LEN, int PACK_NUM)
 		}
 	}
 	tsqueueFFTs.push(pBuf_FFT);
+}
+
+void DataWB(void* pBuffer, int PACK_LEN, int PACK_NUM)
+{
+	unsigned char* ptr = (unsigned char*)pBuffer;
+	int pack_len = PACK_LEN / 64;
+	std::shared_ptr<struct Struct_Datas<struct Struct_WB>> pBuf_WB(new struct Struct_Datas<struct Struct_WB>(PACK_NUM * 64));
+	for (int i = 0; i < PACK_NUM; ++i)
+	{
+		unsigned char* pp = ptr + 10 * 8;
+		for (int i = 0; i < 64; ++i)
+		{
+			pBuf_WB->push(pp);
+			pp += pack_len;
+		}
+		ptr += (PACK_LEN + 10 * 8);
+	}
+	tsqueueWBs.push(pBuf_WB);
 }

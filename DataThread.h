@@ -26,7 +26,7 @@ public:
     void MakeProtocol(int type, std::shared_ptr<struct Struct_NB>& ptr);
     void MakeProtocol(int type, struct Struct_NB* ptr);
 
-    NB_DDC_DATA nb_data[64];
+    NB_DDC_DATA Data[64];
     int NB_Pos[64] = { 0 };
 
 protected:
@@ -38,6 +38,12 @@ class DataThreadWB : public DataThread
     Q_OBJECT
 public:
     explicit DataThreadWB(QObject* parent = nullptr);
+
+    void MakeProtocol(int type, struct Struct_WB* ptr);
+
+    WB_DDC_DATA Data[60];
+    WB_DDC_Record Record[60];
+    int WB_Pos[60] = { 0 };
 
 protected:
     void run();

@@ -17,9 +17,9 @@ enum CARD_TYPE
 alignas(128) std::array<uint32_t, array_size> write_data;
 alignas(128) std::array<uint32_t, array_size> read_data = { { 0 } };
 
-xdma_device* pdev[2] = { nullptr };
+xdma_device* pdev[3] = { nullptr };
 
-PDATA_CALLBACK CallbackWBNB = nullptr, CallbackFFT = nullptr;
+PDATA_CALLBACK CallbackNB = nullptr, CallbackWB = nullptr, CallbackFFT = nullptr;
 
 int OpenDevice()
 {
@@ -35,7 +35,7 @@ int OpenDevice()
 	for (int i = 0; i < device_paths.size(); i++)
 	{
 		pdev[i] = new xdma_device(device_paths[i]);
-		ReadThread(*pdev[i], CallbackWBNB, CallbackFFT);
+		ReadThread(*pdev[i], CallbackNB, CallbackWB, CallbackFFT);
 	}
 	return res;
 }
@@ -89,9 +89,14 @@ int WriteData_ADS_Interrupt(unsigned char* data, int len)
     return 0;
 }
 
-void RegisterCallBackWBNB(PDATA_CALLBACK pfunc, unsigned char* pref)
+void RegisterCallBackNB(PDATA_CALLBACK pfunc, unsigned char* pref)
 {
-    CallbackWBNB = pfunc;
+    CallbackNB = pfunc;
+}
+
+void RegisterCallBackWB(PDATA_CALLBACK pfunc, unsigned char* pref)
+{
+	CallbackWB = pfunc;
 }
 
 void RegisterCallBackFFT(PDATA_CALLBACK pfunc, unsigned char* pref)
@@ -101,7 +106,8 @@ void RegisterCallBackFFT(PDATA_CALLBACK pfunc, unsigned char* pref)
 
 int StopCallbackFunc()
 {
-    CallbackWBNB = nullptr;
+    CallbackNB = nullptr;
+	CallbackWB = nullptr;
     CallbackFFT = nullptr;
 	return 0;
 }

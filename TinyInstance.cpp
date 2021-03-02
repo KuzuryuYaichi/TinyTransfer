@@ -33,7 +33,8 @@ TinyInstance::TinyInstance(QObject *parent): QObject(parent)
 
 void TinyInstance::InitThread()
 {
-    RegisterCallBackWBNB(DataWBNB, NULL);
+    RegisterCallBackNB(DataNB, NULL);
+    RegisterCallBackWB(DataWB, NULL);
     RegisterCallBackFFT(DataFFT, NULL);
     OpenDevice();
 }

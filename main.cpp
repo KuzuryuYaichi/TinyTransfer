@@ -1,4 +1,4 @@
-#include <qcoreapplication.h>
+#include <QCoreApplication>
 #include "TinyInstance.h"
 
 int main(int argc, char **argv)

@@ -11,7 +11,9 @@ EXPORT int OpenDevice();
 
 EXPORT int CloseDevice();
 
-EXPORT void RegisterCallBackWBNB(PDATA_CALLBACK pfunc, unsigned char* pref);
+EXPORT void RegisterCallBackNB(PDATA_CALLBACK pfunc, unsigned char* pref);
+
+EXPORT void RegisterCallBackWB(PDATA_CALLBACK pfunc, unsigned char* pref);
 
 EXPORT void RegisterCallBackFFT(PDATA_CALLBACK pfunc, unsigned char* pref);
 

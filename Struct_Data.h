@@ -19,8 +19,6 @@ struct Struct_NB
 	__int64 DataValid;
 	IQ_Data Data[64];
 
-	Struct_NB() {}
-
 	Struct_NB(unsigned char* buffer)
 	{
 		memcpy(this, buffer, sizeof(Struct_NB));
@@ -37,30 +35,11 @@ struct Struct_WB
 	short GPS_BD1;
 	int BD_GPS2;
 	char DigitalGain[60];
-	IQ_Data Data[64];
+	IQ_Data Data[60];
 
 	Struct_WB(unsigned char* buffer)
 	{
-		OrderNum = *(int*)(buffer + 0);
-		time1 = *(int*)(buffer + 4);
-		time2 = *(int*)(buffer + 8);
-		type = *(char*)(buffer + 12);
-		gain = *(char*)(buffer + 13);
-		GPS_BD1 = *(short*)(buffer + 14);
-		BD_GPS2 = *(int*)(buffer + 16);
-		unsigned char* buf = buffer + 20;
-		for (int i = 0; i < 57; ++i)
-		{
-			DigitalGain[i] = buffer[i];
-		}
-
-		buf = buffer + 80;
-		for (int i = 0; i < 57; ++i)
-		{
-			Data[i][0] = (short)((buf[i] << 8) | buf[i + 1]);
-			Data[i][1] = (short)((buf[i + 2] << 8) | buf[i + 3]);
-			buf += 4;
-		}
+		memcpy(this->Data, buffer, 10 * sizeof(IQ_Data));
 	}
 };
 

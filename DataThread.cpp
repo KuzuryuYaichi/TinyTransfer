@@ -13,6 +13,7 @@
 extern threadsafe_queue<std::shared_ptr<struct Struct_NB>> tsqueueNB;
 extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_NB>>> tsqueueNBs;
 extern threadsafe_queue<std::shared_ptr<struct Struct_WB>> tsqueueWB;
+extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_WB>>> tsqueueWBs;
 extern threadsafe_queue<std::shared_ptr<struct Struct_FFT>> tsqueueFFT;
 extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_FFT>>> tsqueueFFTs;
 extern threadsafe_queue<std::shared_ptr<struct Struct_Orders>> tsqueueSerialOrder;
@@ -30,7 +31,7 @@ DataThreadNB::DataThreadNB(QObject* parent): DataThread(parent)
 {
 	for (int i = 0; i < 64; ++i)
 	{
-		nb_data[i].iDDCChan = i;
+		Data[i].iDDCChan = i;
 	}
 }
 
@@ -49,13 +50,24 @@ void DataThreadNB::run()
 	}
 }
 
-DataThreadWB::DataThreadWB(QObject* parent) : DataThread(parent) {}
+DataThreadWB::DataThreadWB(QObject* parent) : DataThread(parent)
+{
+	for (int i = 0; i < 60; ++i)
+	{
+		Data[i].iDDCChan = i;
+		Record[i].iDDCChan = i;
+	}
+}
 
 void DataThreadWB::run()
 {
 	while (true)
 	{
-		auto ptr = tsqueueWB.wait_and_pop();
+		auto ptr = tsqueueWBs.wait_and_pop();
+		for (int i = 0; i < ptr->pos; ++i)
+		{
+			MakeProtocol(PROT_DDC, ptr->p[i]);
+		}
 	}
 }
 
@@ -95,6 +107,8 @@ void OrderSerialThread::run()
 		SerialOrderDeal(ptr);
 	}
 }
+
+bool isRecord = false;
 
 void OrderSerialThread::SerialOrderDeal(std::shared_ptr<struct Struct_Orders> ptr)
 {
@@ -190,6 +204,11 @@ void OrderSerialThread::SerialOrderDeal(std::shared_ptr<struct Struct_Orders> pt
 		SetDataLenFFT(order[1]);
 		break;
 	}
+	case NET_ISRECORD:
+	{
+		isRecord = ptr->p[0]->order[1];
+		break;
+	}
 	default:
 	{
 		if (ptr->pos > 0 && ptr->pos < 2)
@@ -221,15 +240,29 @@ QByteArray OrderSerialThread::SerialWriteRead(const char* data, qint64 len)
 	return info;
 }
 
+void DataThreadWB::MakeProtocol(int type, struct Struct_WB* ptr)
+{
+	for (int i = 0; i < 10; ++i)
+	{
+		if (Data[i].add(ptr, WB_Pos))
+		{
+			Record[i].WriteFile((const char*)Data[i].Data);
+			//int len = Data[i].MakeNetProtocol(ptr);
+			//if (udpSocket != nullptr)
+			//	udpSocket->udpDataSend((char*)(Data + i), len);
+		}
+	}
+}
+
 void DataThreadNB::MakeProtocol(int type, struct Struct_NB* ptr)
 {
 	for (int i = 0; i < 64; ++i)
 	{
-		if (nb_data[i].add(ptr, NB_Pos))
+		if (Data[i].add(ptr, NB_Pos))
 		{
-			int len = nb_data[i].MakeNetProtocol(ptr);
+			int len = Data[i].MakeNetProtocol(ptr);
 			if (udpSocket != nullptr)
-				udpSocket->udpDataSend((char*)(nb_data + i), len);
+				udpSocket->udpDataSend((char*)(Data + i), len);
 		}
 	}
 }
@@ -238,11 +271,11 @@ void DataThreadNB::MakeProtocol(int type, std::shared_ptr<struct Struct_NB>& ptr
 {
 	for (int i = 0; i < 64; ++i)
 	{
-		if (nb_data[i].add(ptr, NB_Pos))
+		if (Data[i].add(ptr, NB_Pos))
 		{
-			int len = nb_data[i].MakeNetProtocol(ptr);
+			int len = Data[i].MakeNetProtocol(ptr);
 			if (udpSocket != nullptr)
-				udpSocket->udpDataSend((char*)(nb_data + i), len);
+				udpSocket->udpDataSend((char*)(Data + i), len);
 		}
 	}
 }
