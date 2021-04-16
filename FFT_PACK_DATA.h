@@ -28,7 +28,7 @@ struct FFT_PACK_DATA
 		packHead.iDataLength = pack_len;
 		struPara.make(ptr);
 		iDDCChan = ptr->bandNum;
-		iSampleTime.sysTime.calc();
+		iSampleTime.sysTime.calc(ptr->time1);
 		iSampleTime.dwMicroSecond = ptr->time2;
 	}
 

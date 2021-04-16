@@ -8,7 +8,9 @@
 #include <QDir>
 #include <QCoreApplication>
 
+extern double mgcMulVal[61];
 extern struct NB_Params nb_params[64];
+extern bool IQ_Pos[64];//当传递类型为2字节(单路I或Q时 判断应把数据放在struct IQ_Data的哪个位置)
 
 #pragma pack(1)
 
@@ -95,12 +97,66 @@ struct NB_DDC_DATA
 
 		if (iDDCChan < 0 || iDDCChan > 63 || !(DataValid & (((__int64)1) << iDDCChan)))
 			return false;
-		memcpy(Data[pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
-		if (++pos[iDDCChan] == PACK_LEN)
+
+		switch (nb_params[iDDCChan].mode)
 		{
+		case 0:
+		case 2:
+		{
+			short* pDataDst = (short*)(Data + pos[iDDCChan]),
+				* pDataSrc = (short*)ptr->Data[iDDCChan];
+			//memcpy(Data[pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
+			*pDataDst++ = (*pDataSrc++) * mgcMulVal[nb_params[iDDCChan].mgcVal];
+			*pDataDst = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+			++pos[iDDCChan];
+			break;
+		}
+		case 1:
+		case 3:
+		case 4:
+		{
+			short* pDataDst = (short*)(Data + pos[iDDCChan]),
+				*pDataSrc = (short*)ptr->Data[iDDCChan];
+			if (IQ_Pos[iDDCChan])
+			{
+				//memcpy(pData + 1, ptr->Data[iDDCChan], sizeof(short));
+				*(pDataDst + 1) = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+				++pos[iDDCChan];
+			}
+			else
+			{
+				//memcpy(pData, ptr->Data[iDDCChan], sizeof(short));
+				*(pDataDst) = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+			}
+			IQ_Pos[iDDCChan] = !IQ_Pos[iDDCChan];
+			break;
+		}
+		case 5:
+		{
+			short* pDataDst = (short*)(Data + pos[iDDCChan]),
+				* pDataSrc = ((short*)(ptr->Data[iDDCChan])) + 1;
+			if (IQ_Pos[iDDCChan])
+			{
+				//memcpy(pData + 1, ((short*)(ptr->Data[iDDCChan])) + 1, sizeof(short));
+				*(pDataDst + 1) = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+				++pos[iDDCChan];
+			}
+			else
+			{
+				//memcpy(pData, ((short*)(ptr->Data[iDDCChan])) + 1, sizeof(short));
+				*(pDataDst) = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+			}
+			IQ_Pos[iDDCChan] = !IQ_Pos[iDDCChan];
+			break;
+		}
+		}
+
+		if (pos[iDDCChan] == PACK_LEN)
+		{
+			IQ_Pos[iDDCChan] = false;
 			pos[iDDCChan] = 0;
-			iSampleTime.sysTime.calc();
-			iSampleTime.dwMicroSecond = ptr->time2;
+			iSampleTime.sysTime.calc(ptr->time1);
+			iSampleTime.dwMicroSecond = ptr->time2 / 192;
 			struPara.make(ptr, iDDCChan);
 			return true;
 		}
@@ -118,32 +174,6 @@ struct NB_DDC_DATA
 		packHead.iDataLength = pack_len;
 		*(int*)(buf + 16 + pack_len) = 0x77777777;
 		return 20 + pack_len;
-	}
-	
-	bool add(std::shared_ptr<struct Struct_NB>& ptr, int pos[])//返回是否攒够了足够长度的发送数据
-	{
-		__int64 DataValid =
-			((ptr->DataValid & 0xFF00000000000000) >> 56) |
-			((ptr->DataValid & 0x00FF000000000000) >> 40) |
-			((ptr->DataValid & 0x0000FF0000000000) >> 24) |
-			((ptr->DataValid & 0x000000FF00000000) >> 8) |
-			((ptr->DataValid & 0x00000000FF000000) << 8) |
-			((ptr->DataValid & 0x0000000000FF0000) << 24) |
-			((ptr->DataValid & 0x000000000000FF00) << 40) |
-			((ptr->DataValid & 0x00000000000000FF) << 56);
-
-		if (iDDCChan < 0 || iDDCChan > 63 || !(DataValid & (((__int64)1) << iDDCChan)))
-			return false;
-		memcpy(Data[pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
-		if (++pos[iDDCChan] == PACK_LEN)
-		{
-			pos[iDDCChan] = 0;
-			iSampleTime.sysTime.calc();
-			iSampleTime.dwMicroSecond = ptr->time2;
-			struPara.make(ptr, iDDCChan);
-			return true;
-		}
-		return false;
 	}
 
 	int MakeNetProtocol(std::shared_ptr<Struct_NB>& ptr)
@@ -198,8 +228,8 @@ struct WB_DDC_DATA
 		if (++pos[iDDCChan] == PACK_LEN)
 		{
 			pos[iDDCChan] = 0;
-			iSampleTime.sysTime.calc();
-			iSampleTime.dwMicroSecond = ptr->time2;
+			iSampleTime.sysTime.calc(ptr->time1);
+			iSampleTime.dwMicroSecond = ptr->time2 / 192;
 			//struPara.make(ptr, iDDCChan);
 			return true;
 		}
@@ -211,35 +241,6 @@ struct WB_DDC_DATA
 		char* buf = (char*)this;
 		int pack_len = sizeof(*this) - sizeof(int) - sizeof(PACK_HEAD);
 		packHead.iPackType = DT_WB_DDC;
-		packHead.iPackSerial = 0;
-		packHead.iPackTotal = 0;
-		packHead.iPackSubNum = 0;
-		packHead.iDataLength = pack_len;
-		*(int*)(buf + 16 + pack_len) = 0x77777777;
-		return 20 + pack_len;
-	}
-
-	bool add(std::shared_ptr<struct Struct_WB>& ptr, int pos[])//返回是否攒够了足够长度的发送数据
-	{
-		if (iDDCChan < 0 || iDDCChan > 59)
-			return false;
-		memcpy(Data[pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
-		if (++pos[iDDCChan] == PACK_LEN)
-		{
-			pos[iDDCChan] = 0;
-			iSampleTime.sysTime.calc();
-			iSampleTime.dwMicroSecond = ptr->time2;
-			//struPara.make(ptr, iDDCChan);
-			return true;
-		}
-		return false;
-	}
-
-	int MakeNetProtocol(std::shared_ptr<Struct_WB>& ptr)
-	{
-		char* buf = (char*)this;
-		int pack_len = sizeof(*this);
-		packHead.iPackType = DT_NB_DDC;
 		packHead.iPackSerial = 0;
 		packHead.iPackTotal = 0;
 		packHead.iPackSubNum = 0;
@@ -371,23 +372,6 @@ struct FFT_DATA
 	{
 	}
 
-	int MakeNetProtocol(std::shared_ptr<Struct_FFT>& ptr)
-	{
-		char* buf = (char*)this;
-		int pack_len = sizeof(int) + sizeof(SAMPLE_TIME) + sizeof(FFT_PARAM) + sizeof(int) + FFT_NUM_MAP[ptr->pointNum] * 2;
-		packHead.iPackType = DT_WB_FFT;
-		packHead.iPackSerial = ptr->identify;
-		packHead.iPackTotal = 6;
-		packHead.iPackSubNum = ptr->bandNum;
-		packHead.iDataLength = pack_len;
-		struPara.make(ptr);
-		iDDCChan = ptr->bandNum;
-		iSampleTime.sysTime.calc();
-		iSampleTime.dwMicroSecond = ptr->time2;
-		*(int*)(buf + 16 + pack_len) = 0x77777777;
-		return 20 + pack_len;
-	}
-
 	int MakeNetProtocol(Struct_FFT* ptr)
 	{
 		char* buf = (char*)this;
@@ -399,8 +383,8 @@ struct FFT_DATA
 		packHead.iDataLength = pack_len;
 		struPara.make(ptr);
 		iDDCChan = ptr->bandNum;
-		iSampleTime.sysTime.calc();
-		iSampleTime.dwMicroSecond = ptr->time2;
+		iSampleTime.sysTime.calc(ptr->time1);
+		iSampleTime.dwMicroSecond = ptr->time2 / 192;
 		*(int*)(buf + 16 + pack_len) = 0x77777777;
 		return 20 + pack_len;
 	}

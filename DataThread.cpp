@@ -19,6 +19,8 @@ extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_FFT>>>
 extern threadsafe_queue<std::shared_ptr<struct Struct_Orders>> tsqueueSerialOrder;
 
 struct NB_Params nb_params[64];
+double mgcMulVal[61];
+bool IQ_Pos[64] = { false };
 
 DataThread::DataThread(QObject* parent) : QThread(parent) {}
 
@@ -32,6 +34,13 @@ DataThreadNB::DataThreadNB(QObject* parent): DataThread(parent)
 	for (int i = 0; i < 64; ++i)
 	{
 		Data[i].iDDCChan = i;
+		// 初始的增益值
+		nb_params[i].mgcVal = 0;
+	}
+	// 0-60的增益倍数
+	for (int i = 0; i < 61; ++i)
+	{
+		mgcMulVal[i] = pow(10.0, i / 20.0);
 	}
 }
 
@@ -105,6 +114,7 @@ void OrderSerialThread::run()
 	{
 		auto ptr = tsqueueSerialOrder.wait_and_pop();
 		SerialOrderDeal(ptr);
+		//msleep(10);
 	}
 }
 
@@ -117,6 +127,8 @@ void OrderSerialThread::SerialOrderDeal(std::shared_ptr<struct Struct_Orders> pt
 	{
 	case NET_SELF_CHECK:
 	{
+		static bool hasRfDesc = false, hasRfStatus = false;
+		char orgDescVal;
 		for (int i = 0; i < ptr->pos; ++i)
 		{
 			char* order = ptr->p[i]->order;
@@ -139,17 +151,36 @@ void OrderSerialThread::SerialOrderDeal(std::shared_ptr<struct Struct_Orders> pt
 			}
 			case RF_DESC_CONTROL:
 			{
-				order[1] = 5;
-				QByteArray info = SerialWriteRead(order, 7);
-				char* retData = info.data();
-				*(short*)(ret.cReserved + 6) |= 1 << 1;
+				if (!hasRfDesc)
+				{
+					order[1] = 5;
+					QByteArray info = SerialWriteRead(order, 7);
+					char* retData = info.data();
+					*(short*)(ret.cReserved + 6) |= 1 << 1;
+				}
+				else
+				{
+					order[1] = orgDescVal;
+					QByteArray info = SerialWriteRead(order, 7);
+				}
+				hasRfDesc = !hasRfDesc;
 				break;
 			}
 			case RF_STATUS:
 			{
-				QByteArray info = SerialWriteRead(order, 7);
-				char* retData = info.data();
-				*(short*)(ret.cReserved + 6) |= ((retData[1] == 5) ? 1 : 0) << 2;
+				if (!hasRfStatus)
+				{
+					QByteArray info = SerialWriteRead(order, 7);
+					char* retData = info.data();
+					orgDescVal = retData[1];
+				}
+				else
+				{
+					QByteArray info = SerialWriteRead(order, 7);
+					char* retData = info.data();
+					*(short*)(ret.cReserved + 6) |= ((retData[1] == 5) ? 1 : 0) << 2;
+				}
+				hasRfStatus = !hasRfStatus;
 				break;
 			}
 			case PCIE_STATUS:
@@ -193,6 +224,11 @@ void OrderSerialThread::SerialOrderDeal(std::shared_ptr<struct Struct_Orders> pt
 				ret.CopyRet(info.data());
 				break;
 			}
+			case DIGITAL_NB_MGC_GAIN:
+			{
+				nb_params[order[1]].mgcVal = order[2];
+				break;
+			}
 			}
 		}
 		break;
@@ -229,12 +265,15 @@ QByteArray OrderSerialThread::SerialWriteRead(const char* data, qint64 len)
 {
 	//QTimer timer;
 	//timer.start(1500);
-	winQextSerialPort->write(data, len);
+	int wrLen = winQextSerialPort->write(data, len);
 	winQextSerialPort->flush();
 	QByteArray info;
-	info.append(winQextSerialPort->readAll());
-	//while (info.size() < 5)
-	//	info.append(winQextSerialPort->read(5 - info.size()));
+	//info.append(winQextSerialPort->readAll());
+	//qDebug() << "Write" << wrLen << "Bytes: ";
+	//for(int i = 0; i < len; ++i)
+	//	qDebug("0x%02x ", (unsigned char)data[i]);
+	while (info.size() < 5)
+		info.append(winQextSerialPort->read(5 - info.size()));
 	//timer.stop();
 	//qDebug() << "Elapsed Time: " << 1500 - timer.remainingTime() << "ms\r\n";
 	return info;
@@ -267,19 +306,6 @@ void DataThreadNB::MakeProtocol(int type, struct Struct_NB* ptr)
 	}
 }
 
-void DataThreadNB::MakeProtocol(int type, std::shared_ptr<struct Struct_NB>& ptr)
-{
-	for (int i = 0; i < 64; ++i)
-	{
-		if (Data[i].add(ptr, NB_Pos))
-		{
-			int len = Data[i].MakeNetProtocol(ptr);
-			if (udpSocket != nullptr)
-				udpSocket->udpDataSend((char*)(Data + i), len);
-		}
-	}
-}
-
 void DataThreadFFT::MakeProtocol(int type, struct Struct_FFT* ptr)
 {
 	int fft_point_num = FFT_NUM_MAP[ptr->pointNum];
@@ -295,17 +321,5 @@ void DataThreadFFT::MakeProtocol(int type, struct Struct_FFT* ptr)
 					udpSocket->udpDataSend((char*)&fft_pack->fftPackData, len);
 			}
 		}
-	}
-}
-
-void DataThreadFFT::MakeProtocol(int type, std::shared_ptr<struct Struct_FFT>& ptr)
-{
-	int fft_point_num = FFT_NUM_MAP[ptr->pointNum];
-	if (fft_point_num <= ptr->PACK_LEN)
-	{
-		FFT_DATA fft_data(ptr);
-		int len = fft_data.MakeNetProtocol(ptr);
-		if (udpSocket != nullptr)
-			udpSocket->udpDataSend((char*)&fft_data, len);
 	}
 }

@@ -66,7 +66,7 @@ void M_UdpSocket::udpDataReceived()
         {
             std::shared_ptr<struct Struct_Orders> ptr(new struct Struct_Orders(datagram->data(), remoteAddress, remotePort));
             static int orderCnt = 1;
-            qDebug("[%d] Received Instruction: 0x%x\r\n", orderCnt++, ptr->instruction_Net);
+            qDebug("[%d] Received Instruction: 0x%x ", orderCnt++, ptr->instruction_Net);
             tsqueueSerialOrder.push(ptr);
         }
     }

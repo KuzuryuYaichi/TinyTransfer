@@ -28,7 +28,7 @@ struct Struct_NB
 struct Struct_WB
 {
 	int OrderNum;
-	int time1;
+	char time1[4];
 	int time2;
 	char type;
 	char gain;

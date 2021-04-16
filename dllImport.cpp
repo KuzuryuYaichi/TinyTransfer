@@ -14,20 +14,6 @@ void DataNB(void* pBuffer, int PACK_LEN, int PACK_NUM)
 {
 	unsigned char* ptr = (unsigned char*)pBuffer;
 
-	//for (int i = 0; i < PACK_NUM; ++i)
-	//{
-	//	if (ptr[12] == 1)
-	//	{
-	//		auto pBuf = std::make_shared<struct Struct_NB>(*(struct Struct_NB*)ptr);
-	//		tsqueueNB.push(pBuf);
-	//	}
-	//	else if (ptr[12] == 2)
-	//	{
-	//		std::shared_ptr<struct Struct_WB> pBuf(new struct Struct_WB(ptr));
-	//		tsqueueWB.push(pBuf);
-	//	}
-	//	ptr += PACK_LEN;
-	//}
 	int pack_len = PACK_LEN / 32;
 	std::shared_ptr<struct Struct_Datas<struct Struct_NB>> pBuf_NB(new struct Struct_Datas<struct Struct_NB>(PACK_NUM * 32));
 	for (int i = 0; i < PACK_NUM; ++i)
@@ -106,7 +92,7 @@ void DataWB(void* pBuffer, int PACK_LEN, int PACK_NUM)
 			pBuf_WB->push(pp);
 			pp += pack_len;
 		}
-		ptr += (PACK_LEN + 10 * 8);
+		ptr += PACK_LEN + 10 * 8;
 	}
 	tsqueueWBs.push(pBuf_WB);
 }

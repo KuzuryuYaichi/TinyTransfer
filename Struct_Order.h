@@ -32,8 +32,9 @@ enum SERIAL_ORDER_TYPE
 	NB_RECV_MODE,//21.	窄带接收模式下发
 	NB_AGC_SWITCH,//22.	窄带AGC模式控制
 	SMOOTH_TIMES,//23.	平滑次数控制
-	ISRECORD
-	//24.	上位机与单板机之间的指令（不需要透传给V7），待用户给出协议
+	ISRECORD, //24. 落盘开关
+	DIGITAL_NB_MGC_GAIN
+	//26.	上位机与单板机之间的指令（不需要透传给V7），待用户给出协议
 };
 
 struct NB_Params
@@ -42,6 +43,7 @@ struct NB_Params
 	int band = 50000;
 	int mode = 0; //0 IQ 1 AM 2 ISB 3 CW 4 USB 5 LSB
 	bool isMgcAgc = 0; //0 MGC 1 AGC
+	int mgcVal = 0;
 
 	unsigned int CaclSample()
 	{
@@ -193,7 +195,7 @@ enum NET_CONTROL_ORDER
 	NET_RF_STATUS = 0x10000eee,//RF_STATUS
 	NET_GAIN_MODE = 0x10000fff, //RF_GAIN_MODE
 	NET_SMOOTH_TIMES = 0x10000ddd,
-	NET_ISRECORD = 0x10000bbb
+	NET_ISRECORD = 0x10000106
 };
 
 extern struct NB_Params nb_params[64];
@@ -289,6 +291,12 @@ struct Struct_Order
 				else if (val >= 0)
 					order[1] = 0;
 			}
+			else if (instruction_Serial == DIGITAL_NB_MGC_GAIN)
+			{
+				int val = *(int*)(params + 4);
+				order[1] = channel;
+				order[2] = val;
+			}
 			break;
 		}
 		case NET_RBW:
@@ -343,17 +351,20 @@ struct Struct_Orders
 	Struct_Orders(char* data)
 	{
 		channel = *(int*)(data + 8);
+		qDebug() << " ChannelNo: " << channel;
 		instruction_Net = *(int*)(data + 12);
 		params = data + 16;
 		switch (instruction_Net)
 		{
 		case NET_SELF_CHECK:
 		{
-			p = new Struct_Order * [6];
+			p = new Struct_Order * [8];
 			push(FPGA_TEMPRATURE);
 			push(RF_AGC_MGC_SWITCH);
+			push(RF_STATUS);
 			push(RF_DESC_CONTROL);
 			push(RF_STATUS);
+			push(RF_DESC_CONTROL);
 			push(PCIE_STATUS);
 			push(CLOCK_STATUS);
 			break;
@@ -372,13 +383,14 @@ struct Struct_Orders
 		}
 		case NET_RF_GAIN:
 		{
-			nb_params[0].isMgcAgc = *(int*)params;
-			if (nb_params[0].isMgcAgc == 0)
+			nb_params[channel].isMgcAgc = *(int*)params;
+			if (nb_params[channel].isMgcAgc == 0)
 			{
-				p = new Struct_Order * [3];
+				p = new Struct_Order * [2];//3
 				push(RF_AGC_MGC_SWITCH);
-				push(RF_DESC_CONTROL);
-				push(DIGITAL_MGC_PARAMS);
+				//push(RF_DESC_CONTROL);
+				//push(DIGITAL_MGC_PARAMS);
+				push(DIGITAL_NB_MGC_GAIN);
 			}
 			else
 			{
