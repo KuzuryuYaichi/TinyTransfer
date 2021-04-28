@@ -163,7 +163,6 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="Include_export\dllexport.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="streaming_dma.h" />
     <ClInclude Include="stream_dma.hpp" />
     <ClInclude Include="xdma_public.h" />
   </ItemGroup>

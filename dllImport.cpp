@@ -3,11 +3,8 @@
 #include "Struct_Data.h"
 #include "Struct_Datas.h"
 
-threadsafe_queue<std::shared_ptr<struct Struct_NB>> tsqueueNB;
 threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_NB>>> tsqueueNBs;
-threadsafe_queue<std::shared_ptr<struct Struct_WB>> tsqueueWB;
 threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_WB>>> tsqueueWBs;
-threadsafe_queue<std::shared_ptr<struct Struct_FFT>> tsqueueFFT;
 threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_FFT>>> tsqueueFFTs;
 
 void DataNB(void* pBuffer, int PACK_LEN, int PACK_NUM)
@@ -15,7 +12,7 @@ void DataNB(void* pBuffer, int PACK_LEN, int PACK_NUM)
 	unsigned char* ptr = (unsigned char*)pBuffer;
 
 	int pack_len = PACK_LEN / 32;
-	std::shared_ptr<struct Struct_Datas<struct Struct_NB>> pBuf_NB(new struct Struct_Datas<struct Struct_NB>(PACK_NUM * 32));
+	auto pBuf_NB = std::make_shared<struct Struct_Datas<struct Struct_NB>>(PACK_NUM * 32);
 	for (int i = 0; i < PACK_NUM; ++i)
 	{
 		//static unsigned int now = 0, last = 0;
@@ -49,14 +46,7 @@ void DataFFT(void* pBuffer, int PACK_LEN, int PACK_NUM)
 {
 	unsigned char* ptr = (unsigned char*)pBuffer;
 
-	//for (int i = 0; i < PACK_NUM; ++i)
-	//{
-	//	std::shared_ptr<struct Struct_FFT> pBuf(new struct Struct_FFT(ptr));
-	//	tsqueueFFT.push(pBuf);
-	//	ptr += PACK_LEN;
-	//}
-
-	std::shared_ptr<struct Struct_Datas<struct Struct_FFT>> pBuf_FFT(new struct Struct_Datas<struct Struct_FFT>(PACK_NUM));
+	auto pBuf_FFT = std::make_shared<struct Struct_Datas<struct Struct_FFT>>(PACK_NUM);
 	for (int i = 0; i < PACK_NUM; ++i)
 	{
 		int fft_num = ptr[20];
@@ -83,7 +73,7 @@ void DataWB(void* pBuffer, int PACK_LEN, int PACK_NUM)
 {
 	unsigned char* ptr = (unsigned char*)pBuffer;
 	int pack_len = PACK_LEN / 64;
-	std::shared_ptr<struct Struct_Datas<struct Struct_WB>> pBuf_WB(new struct Struct_Datas<struct Struct_WB>(PACK_NUM * 64));
+	auto pBuf_WB = std::make_shared<struct Struct_Datas<struct Struct_WB>>(PACK_NUM * 64);
 	for (int i = 0; i < PACK_NUM; ++i)
 	{
 		unsigned char* pp = ptr + 10 * 8;

@@ -274,8 +274,8 @@ void read_WB(struct paramStruct* param)
             //    std::cout << "WBNB Error Order Now: " << now << " Last: " << last << std::endl;
             //last = now;
 
-            if (CallBack != nullptr)
-                CallBack(buffer, PACK_LEN, PACK_NUM);
+            //if (CallBack != nullptr)
+            //    CallBack(buffer, PACK_LEN, PACK_NUM);
         }
         catch (const std::exception& e) {
             std::cout << e.what() << std::endl;
@@ -308,15 +308,15 @@ size_t TransferByte_Nb, TransferByte_Wb, TransferByte_FFT;
 
 void ReadThread(xdma_device& dev, PDATA_CALLBACK& CallBackNB, PDATA_CALLBACK& CallBackWB, PDATA_CALLBACK& CallBackFFT)
 {
-    const size_t PACK_LEN_NB = 39 * 8 * 32, PACK_LEN_WB = 5 * 8 * 64, PACK_LEN_FFT = 1680 * 8; //1680 * 8;
+    const size_t PACK_LEN_NB = 39 * 8 * 32, PACK_LEN_WB = 58 * 4 * 64, PACK_LEN_FFT = 1680 * 8;
     Info[0] = paramStruct(dev, CallBackNB, TransferByte_Nb, 0, PACK_LEN_NB, 80);
     Info[1] = paramStruct(dev, CallBackFFT, TransferByte_FFT, 1, PACK_LEN_FFT, 80);
-    Info[2] = paramStruct(dev, CallBackWB, TransferByte_Wb, 2, PACK_LEN_WB, 80);
+    Info[2] = paramStruct(dev, CallBackWB, TransferByte_Wb, 2, PACK_LEN_WB, 4096);
     try {
 		DWORD dwThreadID;
 		CreateThread(NULL, 0, ThreadProc_NB, &Info[0], 0, &dwThreadID);
         CreateThread(NULL, 0, ThreadProc_FFT, &Info[1], 0, &dwThreadID);
-        //CreateThread(NULL, 0, ThreadProc_WB, &Info[2], 0, &dwThreadID);
+        // CreateThread(NULL, 0, ThreadProc_WB, &Info[2], 0, &dwThreadID);
     }
     catch (const std::exception& e) {
 

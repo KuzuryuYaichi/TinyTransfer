@@ -7,10 +7,13 @@
 #include <QFile>
 #include <QDir>
 #include <QCoreApplication>
+#include <algorithm>
 
 extern double mgcMulVal[61];
 extern struct NB_Params nb_params[64];
 extern bool IQ_Pos[64];//当传递类型为2字节(单路I或Q时 判断应把数据放在struct IQ_Data的哪个位置)
+extern short agcCmp[];
+extern int NB_AGC_Sum[64];
 
 #pragma pack(1)
 
@@ -44,9 +47,9 @@ struct NB_DDC_PARAM
 	{
 		iFreq = nb_params[i].freq;
 		iBandwidth = nb_params[i].band;
-		iGainMode = 0;
-		iMgc = ptr->gain;
-		iAgc_Val = ptr->gain;
+		iGainMode = nb_params[i].isMgcAgc;
+		iMgc = nb_params[i].mgcVal;
+		iAgc_Val = nb_params[i].agcVal;
 		iBfo = 2000;
 		iSampling = nb_params[i].CaclSample();
 		iBiasToCenFreq = 0;
@@ -98,6 +101,7 @@ struct NB_DDC_DATA
 		if (iDDCChan < 0 || iDDCChan > 63 || !(DataValid & (((__int64)1) << iDDCChan)))
 			return false;
 
+		double MulVal;
 		switch (nb_params[iDDCChan].mode)
 		{
 		case 0:
@@ -105,9 +109,17 @@ struct NB_DDC_DATA
 		{
 			short* pDataDst = (short*)(Data + pos[iDDCChan]),
 				* pDataSrc = (short*)ptr->Data[iDDCChan];
-			//memcpy(Data[pos[iDDCChan]], ptr->Data[iDDCChan], sizeof(IQ_Data));
-			*pDataDst++ = (*pDataSrc++) * mgcMulVal[nb_params[iDDCChan].mgcVal];
-			*pDataDst = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+			if (nb_params[iDDCChan].isMgcAgc == 0)
+			{
+				MulVal = mgcMulVal[nb_params[iDDCChan].mgcVal];
+			}
+			else
+			{
+				MulVal = mgcMulVal[nb_params[iDDCChan].agcVal];
+				NB_AGC_Sum[iDDCChan] += abs(*pDataSrc);
+			}
+			*pDataDst++ = (*pDataSrc++) * MulVal;
+			*pDataDst = *pDataSrc * MulVal;
 			++pos[iDDCChan];
 			break;
 		}
@@ -116,17 +128,24 @@ struct NB_DDC_DATA
 		case 4:
 		{
 			short* pDataDst = (short*)(Data + pos[iDDCChan]),
-				*pDataSrc = (short*)ptr->Data[iDDCChan];
+				* pDataSrc = (short*)ptr->Data[iDDCChan];
+			if (nb_params[iDDCChan].isMgcAgc == 0)
+			{
+				MulVal = mgcMulVal[nb_params[iDDCChan].mgcVal];
+			}
+			else
+			{
+				MulVal = mgcMulVal[nb_params[iDDCChan].agcVal];
+				NB_AGC_Sum[iDDCChan] += abs(*pDataSrc);
+			}
 			if (IQ_Pos[iDDCChan])
 			{
-				//memcpy(pData + 1, ptr->Data[iDDCChan], sizeof(short));
-				*(pDataDst + 1) = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+				*(pDataDst + 1) = *pDataSrc * MulVal;
 				++pos[iDDCChan];
 			}
 			else
 			{
-				//memcpy(pData, ptr->Data[iDDCChan], sizeof(short));
-				*(pDataDst) = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+				*(pDataDst) = *pDataSrc * MulVal;
 			}
 			IQ_Pos[iDDCChan] = !IQ_Pos[iDDCChan];
 			break;
@@ -135,24 +154,35 @@ struct NB_DDC_DATA
 		{
 			short* pDataDst = (short*)(Data + pos[iDDCChan]),
 				* pDataSrc = ((short*)(ptr->Data[iDDCChan])) + 1;
+			if (nb_params[iDDCChan].isMgcAgc == 0)
+			{
+				MulVal = mgcMulVal[nb_params[iDDCChan].mgcVal];
+			}
+			else
+			{
+				MulVal = mgcMulVal[nb_params[iDDCChan].agcVal];
+				NB_AGC_Sum[iDDCChan] += abs(*pDataSrc);
+			}
 			if (IQ_Pos[iDDCChan])
 			{
-				//memcpy(pData + 1, ((short*)(ptr->Data[iDDCChan])) + 1, sizeof(short));
-				*(pDataDst + 1) = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+				*(pDataDst + 1) = *pDataSrc * MulVal;
 				++pos[iDDCChan];
 			}
 			else
 			{
-				//memcpy(pData, ((short*)(ptr->Data[iDDCChan])) + 1, sizeof(short));
-				*(pDataDst) = *pDataSrc * mgcMulVal[nb_params[iDDCChan].mgcVal];
+				*(pDataDst) = *pDataSrc * MulVal;
 			}
 			IQ_Pos[iDDCChan] = !IQ_Pos[iDDCChan];
 			break;
 		}
 		}
-
+		
 		if (pos[iDDCChan] == PACK_LEN)
 		{
+			int index = std::lower_bound(agcCmp, agcCmp + 63, NB_AGC_Sum[iDDCChan] / PACK_LEN) - agcCmp;
+			nb_params[iDDCChan].agcVal = 5 - (index - 50);
+			if (nb_params[iDDCChan].agcVal < 0)nb_params[iDDCChan].agcVal = 0;
+			NB_AGC_Sum[iDDCChan] = 0;
 			IQ_Pos[iDDCChan] = false;
 			pos[iDDCChan] = 0;
 			iSampleTime.sysTime.calc(ptr->time1);
@@ -167,19 +197,6 @@ struct NB_DDC_DATA
 	{
 		char* buf = (char*)this;
 		int pack_len = sizeof(*this) - sizeof(int) - sizeof(PACK_HEAD);
-		packHead.iPackType = DT_NB_DDC;
-		packHead.iPackSerial = 0;
-		packHead.iPackTotal = 0;
-		packHead.iPackSubNum = 0;
-		packHead.iDataLength = pack_len;
-		*(int*)(buf + 16 + pack_len) = 0x77777777;
-		return 20 + pack_len;
-	}
-
-	int MakeNetProtocol(std::shared_ptr<Struct_NB>& ptr)
-	{
-		char* buf = (char*)this;
-		int pack_len = sizeof(*this);
 		packHead.iPackType = DT_NB_DDC;
 		packHead.iPackSerial = 0;
 		packHead.iPackTotal = 0;

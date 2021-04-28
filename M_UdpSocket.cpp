@@ -56,7 +56,7 @@ void M_UdpSocket::udpDataReceived()
 
     while (hasPendingDatagrams())
     {
-        std::shared_ptr<QByteArray> datagram(new QByteArray);
+        auto datagram = std::make_shared<QByteArray>();
         datagram->resize(pendingDatagramSize());
         readDatagram(datagram->data(), datagram->size(), &remoteAddress, &remotePort);
         rcvDataCnt += datagram->size();
@@ -64,7 +64,7 @@ void M_UdpSocket::udpDataReceived()
         const char* data = datagram->data();
         if (data[0] == 0x44 && data[1] == 0x44 && data[2] == 0x44 && data[3] == 0x44)
         {
-            std::shared_ptr<struct Struct_Orders> ptr(new struct Struct_Orders(datagram->data(), remoteAddress, remotePort));
+            auto ptr = std::make_shared<struct Struct_Orders>(datagram->data(), remoteAddress, remotePort);
             static int orderCnt = 1;
             qDebug("[%d] Received Instruction: 0x%x ", orderCnt++, ptr->instruction_Net);
             tsqueueSerialOrder.push(ptr);

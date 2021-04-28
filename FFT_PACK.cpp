@@ -16,7 +16,7 @@ FFT_PACK::FFT_PACK(struct Struct_FFT* ptr): fftPackData(ptr)
 bool FFT_PACK::push(struct Struct_FFT* ptr)
 {
     int pointNum = FFT_NUM_MAP[ptr->pointNum];
-    if (lastPointNum != pointNum)//(重要)记录下上一次的PACK_LEN 以免变更分辨率后遇到和之前分辨率不一样而包序号一致的数据时导致的拼包显示错误
+    if (lastPointNum != pointNum) //(重要)记录下上一次的PACK_LEN 以免变更分辨率后遇到和之前分辨率不一样而包序号一致的数据时导致的拼包显示错误
     {
         lastPointNum = pointNum;
         dict.clear();
@@ -35,7 +35,7 @@ bool FFT_PACK::push(struct Struct_FFT* ptr)
         {
             for (int i = 0; i < pointNum; ++i)
             {
-                data[baseOffset + i] = ptr->Data[i] - 10 * (/*19 - ptr->gain*/ + 118.5);//将偏移量扩大10倍防止转换为整形的过程中丧失精度 由上位机最终还原
+                data[baseOffset + i] = ptr->Data[i] - 10 * (/*19 - ptr->gain*/ + 118.5); //将偏移量扩大10倍防止转换为整形的过程中丧失精度 由上位机最终还原
             }
             isFill[channel] = true;
         }
@@ -73,7 +73,7 @@ std::shared_ptr<FFT_PACK> FFT_PACK::DataProcessFFT(struct Struct_FFT* ptr)
     {
         if (channel >= 0 && channel < 57)
         {
-            dict[key] = std::shared_ptr<FFT_PACK>(new FFT_PACK(ptr));
+            dict[key] = std::make_shared<FFT_PACK>(ptr);
         }
     }
     if (dict.size() > 500)

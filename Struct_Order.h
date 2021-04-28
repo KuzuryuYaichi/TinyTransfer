@@ -4,6 +4,8 @@
 #include <QHostAddress>
 #include <memory>
 
+extern struct NB_Params wb_params;
+
 //单板机与V7间指令协议
 //通过115200Hz
 //每条下发指令固定长度7Byte，每条反馈指令长度固定5Byte。
@@ -44,6 +46,7 @@ struct NB_Params
 	int mode = 0; //0 IQ 1 AM 2 ISB 3 CW 4 USB 5 LSB
 	bool isMgcAgc = 0; //0 MGC 1 AGC
 	int mgcVal = 0;
+	int agcVal = 0;
 
 	unsigned int CaclSample()
 	{
@@ -280,7 +283,7 @@ struct Struct_Order
 				int val = *(int*)(params + 4);
 				if(val > 31)
 					order[1] = 0;
-				else if(val >= 0)
+				else if (val >= 0)
 					order[1] = 31 - val;
 			}
 			else if (instruction_Serial == DIGITAL_MGC_PARAMS)
@@ -383,19 +386,34 @@ struct Struct_Orders
 		}
 		case NET_RF_GAIN:
 		{
-			nb_params[channel].isMgcAgc = *(int*)params;
-			if (nb_params[channel].isMgcAgc == 0)
+			if (channel >= 0 && channel < 64) //当channel在0到63之间时控制窄带
 			{
-				p = new Struct_Order * [2];//3
-				push(RF_AGC_MGC_SWITCH);
-				//push(RF_DESC_CONTROL);
-				//push(DIGITAL_MGC_PARAMS);
-				push(DIGITAL_NB_MGC_GAIN);
+				nb_params[channel].isMgcAgc = *(int*)params;
+				if (nb_params[channel].isMgcAgc == 0) //窄带MGC
+				{
+					p = new Struct_Order * [2];
+					push(DIGITAL_NB_MGC_GAIN);
+				}
+				else //窄带AGC
+				{
+
+				}
 			}
-			else
+			else if (channel == 64) //否则channel为64时控制宽带
 			{
-				p = new Struct_Order * [1];
-				push(RF_AGC_MGC_SWITCH);
+				wb_params.isMgcAgc = *(int*)params;
+				if (wb_params.isMgcAgc == 0) //宽带MGC
+				{
+					p = new Struct_Order * [3];
+					push(RF_AGC_MGC_SWITCH);
+					push(RF_DESC_CONTROL);
+					push(DIGITAL_MGC_PARAMS);
+				}
+				else //宽带AGC
+				{
+					p = new Struct_Order * [1];
+					push(RF_AGC_MGC_SWITCH);
+				}
 			}
 			break;
 		}

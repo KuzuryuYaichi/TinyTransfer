@@ -10,17 +10,24 @@
 #include <math.h>
 #include "SerialPort/qextserialenumerator.h"
 
-extern threadsafe_queue<std::shared_ptr<struct Struct_NB>> tsqueueNB;
 extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_NB>>> tsqueueNBs;
-extern threadsafe_queue<std::shared_ptr<struct Struct_WB>> tsqueueWB;
 extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_WB>>> tsqueueWBs;
-extern threadsafe_queue<std::shared_ptr<struct Struct_FFT>> tsqueueFFT;
 extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_FFT>>> tsqueueFFTs;
 extern threadsafe_queue<std::shared_ptr<struct Struct_Orders>> tsqueueSerialOrder;
 
 struct NB_Params nb_params[64];
+struct NB_Params wb_params;
 double mgcMulVal[61];
 bool IQ_Pos[64] = { false };
+int NB_AGC_Sum[64] = { 0 };
+short agcCmp[] = { 0x54B0, 0x4B7B, 0x4345, 0x3BF5,
+	0x356F, 0x2FA0, 0x2A72, 0x25D4, 0x21B7, 0x1E0D, 0x1AC8, 0x17DE, 0x1546,
+	0x12F6, 0x10E6, 0x0F0F, 0x0D6C, 0x0BF6, 0x0AA9, 0x0981, 0x0878, 0x078C,
+	0x068A, 0x05FF, 0x0558, 0x04C3, 0x043F, 0x03C8, 0x035F, 0x0301, 0x02AE,
+	0x0263, 0x0221, 0x01E5, 0x01B1, 0x0182, 0x0158, 0x0132, 0x0111, 0x00F3,
+	0x00D9, 0x00C1, 0x00AC, 0x0099, 0x0089, 0x007A, 0x006D, 0x0061, 0x0056,
+	0x004D, 0x0045, 0x003D, 0x0036, 0x0031, 0x002B, 0x0027, 0x0022, 0x001F,
+	0x001B, 0x0018, 0x0016, 0x0013, 0x0011, 0x000F };
 
 DataThread::DataThread(QObject* parent) : QThread(parent) {}
 
@@ -31,14 +38,20 @@ void DataThread::SetUdpSocket(M_UdpSocket* udpSocket)
 
 DataThreadNB::DataThreadNB(QObject* parent): DataThread(parent)
 {
+	for (int i = 0; i < 32; ++i)
+	{
+		auto temp = agcCmp[i];
+		agcCmp[i] = agcCmp[63 - i];
+		agcCmp[63 - i] = temp;
+	}
+
 	for (int i = 0; i < 64; ++i)
 	{
 		Data[i].iDDCChan = i;
-		// 初始的增益值
-		nb_params[i].mgcVal = 0;
+		nb_params[i].mgcVal = 0; // 初始的增益值
 	}
-	// 0-60的增益倍数
-	for (int i = 0; i < 61; ++i)
+	
+	for (int i = 0; i < 61; ++i) // 0-60的增益倍数
 	{
 		mgcMulVal[i] = pow(10.0, i / 20.0);
 	}
@@ -48,9 +61,6 @@ void DataThreadNB::run()
 {
 	while (true)
 	{
-		//auto ptr = tsqueueNB.wait_and_pop();
-		//MakeProtocol(PROT_DDC, ptr);
-
 		auto ptr = tsqueueNBs.wait_and_pop();
 		for (int i = 0; i < ptr->pos; ++i)
 		{
@@ -86,9 +96,6 @@ void DataThreadFFT::run()
 {
 	while (true)
 	{
-		//auto ptr = tsqueueFFT.wait_and_pop();
-		//MakeProtocol(PROT_FFT, ptr);
-
 		auto ptr = tsqueueFFTs.wait_and_pop();
 		for (int i = 0; i < ptr->pos; ++i)
 		{
@@ -263,25 +270,21 @@ void OrderSerialThread::SerialOrderDeal(std::shared_ptr<struct Struct_Orders> pt
 
 QByteArray OrderSerialThread::SerialWriteRead(const char* data, qint64 len)
 {
-	//QTimer timer;
-	//timer.start(1500);
 	int wrLen = winQextSerialPort->write(data, len);
 	winQextSerialPort->flush();
 	QByteArray info;
-	//info.append(winQextSerialPort->readAll());
+	info.append(winQextSerialPort->readAll());
 	//qDebug() << "Write" << wrLen << "Bytes: ";
 	//for(int i = 0; i < len; ++i)
 	//	qDebug("0x%02x ", (unsigned char)data[i]);
-	while (info.size() < 5)
-		info.append(winQextSerialPort->read(5 - info.size()));
-	//timer.stop();
-	//qDebug() << "Elapsed Time: " << 1500 - timer.remainingTime() << "ms\r\n";
+	//while (info.size() < 5)
+	//	info.append(winQextSerialPort->read(5 - info.size()));
 	return info;
 }
 
 void DataThreadWB::MakeProtocol(int type, struct Struct_WB* ptr)
 {
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < 58; ++i)
 	{
 		if (Data[i].add(ptr, WB_Pos))
 		{

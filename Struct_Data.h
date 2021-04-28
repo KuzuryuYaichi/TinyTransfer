@@ -39,7 +39,7 @@ struct Struct_WB
 
 	Struct_WB(unsigned char* buffer)
 	{
-		memcpy(this->Data, buffer, 10 * sizeof(IQ_Data));
+		memcpy(this->Data, buffer, 58 * sizeof(IQ_Data));
 	}
 };
 

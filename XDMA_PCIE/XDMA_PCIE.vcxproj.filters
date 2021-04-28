@@ -24,13 +24,10 @@
     <ClInclude Include="xdma_public.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="stream_dma.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="streaming_dma.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Include_export\dllexport.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="stream_dma.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
