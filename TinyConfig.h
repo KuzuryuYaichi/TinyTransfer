@@ -1,5 +1,5 @@
-#ifndef _MY_CONFIG_
-#define _MY_CONFIG_
+#ifndef _TINY_CONFIG_H
+#define _TINY_CONFIG_H
 
 #include <QSettings>
 #include <QFileInfo>

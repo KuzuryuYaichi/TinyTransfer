@@ -1,5 +1,5 @@
-#ifndef _FFT_PACK_DATA_
-#define _FFT_PACK_DATA_
+#ifndef _FFT_PACK_DATA_H
+#define _FFT_PACK_DATA_H
 
 #include <memory>
 #include "Struct_NetData.h"

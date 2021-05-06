@@ -1,5 +1,5 @@
-#ifndef _STRUCT_NET_COMMON_
-#define _STRUCT_NET_COMMON_
+#ifndef _STRUCT_NET_COMMON_H
+#define _STRUCT_NET_COMMON_H
 
 #include <QDateTime>
 

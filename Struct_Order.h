@@ -1,5 +1,5 @@
-#ifndef _STRUCT_ORDER_
-#define _STRUCT_ORDER_
+#ifndef _STRUCT_ORDER_H
+#define _STRUCT_ORDER_H
 
 #include <QHostAddress>
 #include <memory>

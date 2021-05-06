@@ -188,12 +188,7 @@
     <ClCompile Include="TinyInstance.cpp" />
     <ClCompile Include="DataThread.cpp" />
     <ClCompile Include="M_UdpSocket.cpp" />
-    <ClCompile Include="SerialPort\qextserialbase.cpp" />
-    <ClCompile Include="SerialPort\qextserialenumerator.cpp" />
-    <ClCompile Include="SerialPort\qextserialport.cpp" />
-    <ClCompile Include="SerialPort\win_qextserialport.cpp" />
     <ClCompile Include="FFT_PACK.h" />
-    <ClCompile Include="TinySerialPort.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FFT_PACK_DATA.h" />
@@ -201,12 +196,7 @@
     <QtMoc Include="DataThread.h" />
     <ClInclude Include="Struct_NetCommon.h" />
     <ClInclude Include="TinyConfig.h" />
-    <ClInclude Include="TinySerialPort.h" />
     <QtMoc Include="M_UdpSocket.h" />
-    <QtMoc Include="SerialPort\qextserialbase.h" />
-    <ClInclude Include="SerialPort\qextserialenumerator.h" />
-    <QtMoc Include="SerialPort\qextserialport.h" />
-    <QtMoc Include="SerialPort\win_qextserialport.h" />
     <ClInclude Include="Struct_Data.h" />
     <ClInclude Include="Struct_NetData.h" />
     <ClInclude Include="Struct_Order.h" />

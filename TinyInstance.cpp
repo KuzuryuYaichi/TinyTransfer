@@ -2,7 +2,6 @@
 #include "dllexport.h"
 #include "dllImport.h"
 #include "Struct_Data.h"
-#include "SerialPort/win_qextserialport.h"
 
 TinyInstance::TinyInstance(QObject *parent): QObject(parent)
 {

@@ -1,5 +1,5 @@
-#ifndef _STRUCT_NET_DATA_H_
-#define _STRUCT_NET_DATA_H_
+#ifndef _STRUCT_NET_DATA_H
+#define _STRUCT_NET_DATA_H
 
 #include "Struct_Data.h"
 #include "Struct_Order.h"

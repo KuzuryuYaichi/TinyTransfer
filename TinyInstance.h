@@ -1,5 +1,5 @@
-#ifndef _TINY_INSTANCE_H_
-#define _TINY_INSTANCE_H_
+#ifndef _TINY_INSTANCE_H
+#define _TINY_INSTANCE_H
 
 #include "DataThread.h"
 #include "M_UdpSocket.h"

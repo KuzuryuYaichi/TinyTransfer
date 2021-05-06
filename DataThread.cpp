@@ -8,7 +8,6 @@
 #include "dllexport.h"
 #include "FFT_PACK.h"
 #include <math.h>
-#include "SerialPort/qextserialenumerator.h"
 
 extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_NB>>> tsqueueNBs;
 extern threadsafe_queue<std::shared_ptr<struct Struct_Datas<struct Struct_WB>>> tsqueueWBs;
@@ -108,20 +107,19 @@ OrderSerialThread::OrderSerialThread(QObject* parent) : DataThread(parent) {}
 
 void OrderSerialThread::run()
 {
-	winQextSerialPort = new Win_QextSerialPort(QString::fromLocal8Bit("COM3"));
-	if (!winQextSerialPort->open(QIODevice::ReadWrite))
+	qSerialPort = new QSerialPort(QString::fromLocal8Bit("COM3"));
+	if (!qSerialPort->open(QIODevice::ReadWrite))
 		qDebug() << "COM3 Open Failed!";
-	winQextSerialPort->setBaudRate(BaudRateType::BAUD115200);
-	winQextSerialPort->setDataBits(DataBitsType::DATA_8);
-	winQextSerialPort->setFlowControl(FlowType::FLOW_OFF);
-	winQextSerialPort->setParity(ParityType::PAR_NONE);
-	winQextSerialPort->setStopBits(StopBitsType::STOP_1);
+	qSerialPort->setBaudRate(QSerialPort::Baud115200);
+	qSerialPort->setDataBits(QSerialPort::Data8);
+	qSerialPort->setFlowControl(QSerialPort::NoFlowControl);
+	qSerialPort->setParity(QSerialPort::NoParity);
+	qSerialPort->setStopBits(QSerialPort::OneStop);
 
 	while (true)
 	{
 		auto ptr = tsqueueSerialOrder.wait_and_pop();
 		SerialOrderDeal(ptr);
-		//msleep(10);
 	}
 }
 
@@ -270,15 +268,22 @@ void OrderSerialThread::SerialOrderDeal(std::shared_ptr<struct Struct_Orders> pt
 
 QByteArray OrderSerialThread::SerialWriteRead(const char* data, qint64 len)
 {
-	int wrLen = winQextSerialPort->write(data, len);
-	winQextSerialPort->flush();
+	int wrLen = qSerialPort->write(data, len);
 	QByteArray info;
-	info.append(winQextSerialPort->readAll());
-	//qDebug() << "Write" << wrLen << "Bytes: ";
-	//for(int i = 0; i < len; ++i)
-	//	qDebug("0x%02x ", (unsigned char)data[i]);
-	//while (info.size() < 5)
-	//	info.append(winQextSerialPort->read(5 - info.size()));
+	if (qSerialPort->waitForBytesWritten(100)) {
+		if (qSerialPort->waitForReadyRead(100)) {
+			info = qSerialPort->readAll();
+			while (qSerialPort->waitForReadyRead(10))
+				info += qSerialPort->readAll();
+		}
+		else {
+			qDebug() << tr("Wait read response timeout %1").arg(QTime::currentTime().toString());
+		}
+	}
+	else {
+		qDebug() << tr("Wait write request timeout %1").arg(QTime::currentTime().toString());
+	}
+	msleep(10);
 	return info;
 }
 

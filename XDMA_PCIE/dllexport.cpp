@@ -8,23 +8,12 @@
 #include <thread>
 #include <vector>
 
-enum CARD_TYPE
-{
-	CARD_AIS_ACARS = 0,
-	CARD_ADS_B
-};
-
-alignas(128) std::array<uint32_t, array_size> write_data;
-alignas(128) std::array<uint32_t, array_size> read_data = { { 0 } };
-
 xdma_device* pdev[3] = { nullptr };
 
 PDATA_CALLBACK CallbackNB = nullptr, CallbackWB = nullptr, CallbackFFT = nullptr;
 
 int OpenDevice()
 {
-    std::iota(std::begin(write_data), std::end(write_data), 0);
-
     const auto device_paths = get_device_paths(GUID_DEVINTERFACE_XDMA);
     if (device_paths.empty()) {
 		return -1;

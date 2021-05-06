@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _STREAM_DMA_HPP
+#define _STREAM_DMA_HPP
 
 #include <string>
 #include <thread>
@@ -7,8 +8,6 @@
 #include <system_error>
 #include <Windows.h>
 #include <SetupAPI.h>
-
-constexpr size_t array_size = 2048 / 4;
 
 // ============ windows device handle ===========
 struct device_file {
@@ -322,3 +321,5 @@ void ReadThread(xdma_device& dev, PDATA_CALLBACK& CallBackNB, PDATA_CALLBACK& Ca
 
     }
 }
+
+#endif

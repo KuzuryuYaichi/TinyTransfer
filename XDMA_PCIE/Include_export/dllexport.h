@@ -1,6 +1,7 @@
-#pragma once
+#ifndef _DLL_EXPORT_H
+#define _DLL_EXPORT_H
 
-#define WIN32_LEAN_AND_MEAN             // 从 Windows 头文件中排除极少使用的内容
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 typedef void (WINAPI *PDATA_CALLBACK)(void* pBuffer, int PACK_LEN, int PACK_NUM);
@@ -24,3 +25,5 @@ EXPORT void WriteUserRegister(long addr, unsigned int value);
 EXPORT unsigned int ReadUserRegister(long addr);
 
 EXPORT void SetDataLenFFT(int len);
+
+#endif

@@ -1,5 +1,5 @@
-#ifndef _FFT_PACK_
-#define _FFT_PACK_
+#ifndef _FFT_PACK_H
+#define _FFT_PACK_H
 
 #include <memory>
 #include "Struct_Data.h"

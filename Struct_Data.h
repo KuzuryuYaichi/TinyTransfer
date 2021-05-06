@@ -1,5 +1,5 @@
-#ifndef _STRUCT_DATA_H_
-#define _STRUCT_DATA_H_
+#ifndef _STRUCT_DATA_H
+#define _STRUCT_DATA_H
 
 #include <memory>
 

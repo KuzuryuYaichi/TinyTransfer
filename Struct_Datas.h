@@ -1,5 +1,5 @@
-#ifndef _STRUCT_DATAS_
-#define _STRUCT_DATAS_
+#ifndef _STRUCT_DATAS_H
+#define _STRUCT_DATAS_H
 
 template<typename T>
 struct Struct_Datas

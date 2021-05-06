@@ -4,7 +4,7 @@
 #include <QThread>
 #include "TinySerialPort.h"
 #include "Struct_NetData.h"
-#include "SerialPort/win_qextserialport.h"
+#include <QSerialPort>
 
 class M_UdpSocket;
 
@@ -66,8 +66,7 @@ class OrderSerialThread : public DataThread
     Q_OBJECT
 public:
     explicit OrderSerialThread(QObject* parent = nullptr);
-    TinySerialPort* tinySerialPort = nullptr;
-    Win_QextSerialPort* winQextSerialPort = nullptr;
+    QSerialPort* qSerialPort = nullptr;
 
 protected:
     void run();
@@ -83,4 +82,4 @@ enum Protocol_Type
     PROT_FFT
 };
 
-#endif // _DATA_THREAD_H
+#endif
